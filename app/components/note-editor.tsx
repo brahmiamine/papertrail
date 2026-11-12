@@ -21,6 +21,8 @@ export function NoteEditor({ note, t, lang, font, setFont, update, add, openMenu
   const findInput = useRef<HTMLInputElement>(null)
   const area = useRef<HTMLElement | null>(null)
   const f = featureCopy[lang]
+  const rich = !!note?.rich
+  const locked = !!note?.locked
   const text = note?.body ?? ''
   const json = detectNoteJson(text) !== null
   useEffect(() => { setFontDraft(String(font)) }, [font])
@@ -75,8 +77,6 @@ export function NoteEditor({ note, t, lang, font, setFont, update, add, openMenu
     if (!note) return
     try { downloadText(await embedAttachments(exportNote(note, extension), userId), note.title.replace(/[<>:"/\\|?*]/g, '_') + '.' + extension) } catch { setFailure(f.failure) }
   }
-  const rich = !!note?.rich
-  const locked = !!note?.locked
   const readonly = !!note?.trashedAt || readOnly || locked
   return <section className="editor">
     <header>
