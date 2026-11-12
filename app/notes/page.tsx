@@ -20,7 +20,6 @@ export default function Notes() {
   const [theme, setTheme] = useState('paper')
   const [lang, setLang] = useState<Language>('fr')
   const [font, setFont] = useState(18)
-  const [rich, setRich] = useState(false)
   const [sidebar, setSidebar] = useState(272)
   const [drawer, setDrawer] = useState(false)
   const [deleting, setDeleting] = useState<Note>()
@@ -36,14 +35,13 @@ export default function Notes() {
       if (['paper', 'night', 'sun'].includes(saved.theme)) setTheme(saved.theme)
       if (['fr', 'en', 'ar'].includes(saved.lang)) setLang(saved.lang)
       if (saved.font >= 14 && saved.font <= 48) setFont(saved.font)
-      if (saved.rich === true) setRich(true)
     } catch {}
     setPreferencesReady(true)
   }, [])
   useEffect(() => {
-    if (preferencesReady) try { localStorage.setItem('papertrail-preferences', JSON.stringify({ theme, lang, font, rich })) } catch {}
+    if (preferencesReady) try { localStorage.setItem('papertrail-preferences', JSON.stringify({ theme, lang, font })) } catch {}
     document.documentElement.lang = lang
-  }, [theme, lang, font, rich, preferencesReady])
+  }, [theme, lang, font, preferencesReady])
   const add = () => { if (notebook.ready) { setActive(notebook.add()); setFilter('all'); setQuery(''); setDrawer(false) } }
   useEffect(() => {
     const shortcut = (event: KeyboardEvent) => { if ((event.ctrlKey || event.metaKey) && event.altKey && event.key.toLowerCase() === 'n') { event.preventDefault(); add() } }
@@ -54,7 +52,7 @@ export default function Notes() {
   return <main className={`app ${theme} ${drawer ? 'drawer-open' : ''} ${focus ? 'focus-mode' : ''}`} dir={lang === 'ar' ? 'rtl' : 'ltr'} style={{ '--sidebar': sidebar + 'px' } as React.CSSProperties}>
     <NoteSidebar notes={notes} active={current?.id} select={select} query={query} search={setQuery} add={add} remove={note => { if (notebook.ready) setDeleting(note) }} t={copy[lang]} lang={lang} setLang={setLang} theme={theme} setTheme={setTheme} width={sidebar} setWidth={setSidebar} email={session?.user.email} signOut={signOut} status={notebook.status} error={notebook.error} retry={notebook.retry} ready={notebook.ready} filter={filter} setFilter={setFilter} change={notebook.change} reorder={notebook.reorder} userId={session?.user.id} restore={id => { notebook.restore(id); setFilter('all'); setActive(id) }} settings={() => setSettings(true)} tools={<OfflineApp lang={lang} />} />
     <button className="scrim" tabIndex={-1} aria-hidden="true" onClick={() => setDrawer(false)} />
-    <NoteEditor note={current} t={copy[lang]} lang={lang} font={font} setFont={setFont} rich={rich} setRich={setRich} update={body => { if (current) notebook.update(current.id, body) }} add={add} openMenu={() => { setFocus(false); setDrawer(true) }} change={patch => { if (current) notebook.change(current.id, patch) }} userId={session?.user.id} focus={focus} setFocus={setFocus} readOnly={notebook.readOnly} />
+    <NoteEditor note={current} t={copy[lang]} lang={lang} font={font} setFont={setFont} update={body => { if (current) notebook.update(current.id, body) }} add={add} openMenu={() => { setFocus(false); setDrawer(true) }} change={patch => { if (current) notebook.change(current.id, patch) }} userId={session?.user.id} focus={focus} setFocus={setFocus} readOnly={notebook.readOnly} />
     <DeleteNoteDialog note={deleting} lang={lang} cancel={() => setDeleting(undefined)} confirm={notebook.remove} />
     <AccountDialog userId={session?.user.id} email={session?.user.email} lang={lang} open={settings} close={() => setSettings(false)}><NotebookTools book={notebook.book} userId={session?.user.id} lang={lang} importNotes={notebook.import} ready={notebook.ready} /></AccountDialog>
   </main>

@@ -1,5 +1,5 @@
 export type NoteVersion = { body: string; at: number }
-export type Note = { id: string; title: string; body: string; updated: number; color: string; created?: number; pinned?: boolean; archived?: boolean; tags?: string[]; trashedAt?: number; history?: NoteVersion[]; revision?: number; conflictOf?: string; heading?: string; order?: number }
+export type Note = { id: string; title: string; body: string; updated: number; color: string; created?: number; pinned?: boolean; archived?: boolean; tags?: string[]; trashedAt?: number; history?: NoteVersion[]; revision?: number; conflictOf?: string; heading?: string; order?: number; rich?: boolean; locked?: boolean }
 export type Notebook = { notes: Note[]; pending: string[]; deleted: string[] }
 export const colors = ['#e9b949', '#e4876b', '#8ebf9b', '#8da9d1', '#b59ad9']
 export const emptyNotebook = (): Notebook => ({ notes: [], pending: [], deleted: [] })
@@ -24,7 +24,7 @@ export function editNote(book: Notebook, id: string, body: string): Notebook {
   const checkpoint = body === '' || !history.length || Date.now() - history[0].at >= 30000
   return changeNote(book, id, { body, title: noteTitle(note.heading, body), history: checkpoint ? [{ body: note.body, at: Date.now() }, ...history].slice(0, 50) : history })
 }
-export function changeNote(book: Notebook, id: string, patch: Partial<Pick<Note, 'body' | 'title' | 'history' | 'pinned' | 'archived' | 'tags' | 'trashedAt' | 'heading'>>) {
+export function changeNote(book: Notebook, id: string, patch: Partial<Pick<Note, 'body' | 'title' | 'history' | 'pinned' | 'archived' | 'tags' | 'trashedAt' | 'heading' | 'rich' | 'locked'>>) {
   return { ...book, notes: book.notes.map(note => note.id === id ? { ...note, ...patch, updated: Math.max(Date.now(), note.updated + 1) } : note), pending: [...new Set([...book.pending, id])] }
 }
 export const trashNote = (book: Notebook, id: string) => changeNote(book, id, { trashedAt: Date.now() })
@@ -47,7 +47,7 @@ export function mergeRemote(book: Notebook, remote: Note[]): Notebook {
       const conflict = { ...local, id: crypto.randomUUID(), revision: undefined, conflictOf: local.id }
       notes[index] = incoming
       pending.delete(local.id)
-      const metadata = (note: Note) => JSON.stringify([note.tags, note.pinned, note.archived, note.trashedAt, note.color, note.created, note.history?.map(value => [value.at,value.body])])
+      const metadata = (note: Note) => JSON.stringify([note.tags, note.pinned, note.archived, note.rich, note.locked, note.trashedAt, note.color, note.created, note.history?.map(value => [value.at,value.body])])
       if (local.body !== incoming.body || metadata(local) !== metadata(incoming)) {
         notes.push(conflict); pending.add(conflict.id)
       }
@@ -71,7 +71,7 @@ export function parseNotebook(raw: string | null): Notebook {
     if (note.history !== undefined && (!Array.isArray(note.history) || !note.history.every(v => v && typeof v.body === 'string' && Number.isFinite(v.at)))) throw new Error('Invalid history')
     for (const field of ['created', 'trashedAt', 'revision'] as const) if (note[field] !== undefined && (!Number.isFinite(note[field]) || note[field]! < 0)) throw new Error('Invalid date or revision')
     if (note.heading !== undefined && (typeof note.heading !== 'string' || note.heading.length > 200)) throw new Error('Invalid title')
-    for (const field of ['pinned', 'archived'] as const) if (note[field] !== undefined && typeof note[field] !== 'boolean') throw new Error('Invalid flag')
+    for (const field of ['pinned', 'archived', 'rich', 'locked'] as const) if (note[field] !== undefined && typeof note[field] !== 'boolean') throw new Error('Invalid flag')
     return { ...note, id: /^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(note.id) ? note.id : crypto.randomUUID(), title: noteTitle(note.heading, note.body) }
   })
   return { notes, pending: notes.filter((note: Note, i: number) => source.pending.includes(source.notes[i].id)).map((note: Note) => note.id), deleted: source.deleted }

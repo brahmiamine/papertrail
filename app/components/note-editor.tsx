@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { ChevronRight, Download, Ellipsis, Menu, PanelLeftClose, PanelLeftOpen, Pilcrow, Plus, Search, Type, X } from 'lucide-react'
+import { ChevronRight, Download, Ellipsis, Menu, PanelLeftClose, PanelLeftOpen, Pilcrow, Lock, LockOpen, Plus, Search, Type, X } from 'lucide-react'
 import { downloadText, exportNote, formatText, noteTitle, wordCount, type Note, type changeNote } from '../lib/notes'
 import { embedAttachments } from '../lib/attachments'
 import { detectNoteJson } from '../lib/markdown'
@@ -7,9 +7,9 @@ import { featureCopy, type copy, type Language } from '../lib/i18n'
 import { FormatToolbar } from './format-toolbar'
 import { DictateButton } from './dictate-button'
 import { RichView } from './rich-view'
-type Props = { note?: Note; t: typeof copy.fr; lang: Language; font: number; setFont: (size: number) => void; rich: boolean; setRich: (rich: boolean) => void; update: (body: string) => void; add: () => void; openMenu: () => void; change: (patch: Parameters<typeof changeNote>[2]) => void; userId?: string; focus: boolean; setFocus: (value: boolean) => void; readOnly: boolean }
+type Props = { note?: Note; t: typeof copy.fr; lang: Language; font: number; setFont: (size: number) => void; update: (body: string) => void; add: () => void; openMenu: () => void; change: (patch: Parameters<typeof changeNote>[2]) => void; userId?: string; focus: boolean; setFocus: (value: boolean) => void; readOnly: boolean }
 
-export function NoteEditor({ note, t, lang, font, setFont, rich, setRich, update, add, openMenu, change, userId, focus, setFocus, readOnly }: Props) {
+export function NoteEditor({ note, t, lang, font, setFont, update, add, openMenu, change, userId, focus, setFocus, readOnly }: Props) {
   const [more, setMore] = useState(false)
   const [preview, setPreview] = useState(false)
   const [codeNote, setCodeNote] = useState(false)
@@ -75,7 +75,9 @@ export function NoteEditor({ note, t, lang, font, setFont, rich, setRich, update
     if (!note) return
     try { downloadText(await embedAttachments(exportNote(note, extension), userId), note.title.replace(/[<>:"/\\|?*]/g, '_') + '.' + extension) } catch { setFailure(f.failure) }
   }
-  const readonly = !!note?.trashedAt || readOnly
+  const rich = !!note?.rich
+  const locked = !!note?.locked
+  const readonly = !!note?.trashedAt || readOnly || locked
   return <section className="editor">
     <header>
       <button className="menu-btn" onClick={openMenu} aria-label={t.menu}><Menu size={22} aria-hidden="true" /></button>
@@ -85,7 +87,8 @@ export function NoteEditor({ note, t, lang, font, setFont, rich, setRich, update
       <div className={`actions ${more ? 'open' : ''}`}>
         <button disabled={!note} onClick={() => void download('md')} aria-label=".md" title=".md"><Download size={15} aria-hidden="true" /> .md</button>
         <button disabled={!note} onClick={() => void download('txt')} aria-label=".txt" title=".txt"><Download size={15} aria-hidden="true" /> .txt</button>
-        <button disabled={!note || readonly} aria-pressed={rich} title={t.richMode} aria-label={t.richMode} onClick={() => { setCodeNote(false); setRich(!rich) }}><Type size={16} aria-hidden="true" /></button>
+        <button disabled={!note || !!note.trashedAt || readOnly || locked} aria-pressed={rich} title={t.richMode} aria-label={t.richMode} onClick={() => { setCodeNote(false); change({ rich: !rich }) }}><Type size={16} aria-hidden="true" /></button>
+        <button disabled={!note || !!note.trashedAt || readOnly} aria-pressed={locked} title={locked ? f.unlock : f.lock} aria-label={locked ? f.unlock : f.lock} onClick={() => change({ locked: !locked })}>{locked ? <Lock size={16} aria-hidden="true" /> : <LockOpen size={16} aria-hidden="true" />}</button>
         <DictateButton lang={lang} editor={area} disabled={!note || readonly || preview} />
         <button disabled={!note || readonly} aria-label={t.tidy} title={t.tidy} onClick={() => update(formatText(text))}><Pilcrow size={16} aria-hidden="true" /></button>
         <button className="sidebar-toggle" aria-pressed={focus} aria-label={focus ? f.exitFocus : f.focus} title={focus ? f.exitFocus : f.focus} onClick={() => setFocus(!focus)}>{focus ? <PanelLeftOpen size={16} aria-hidden="true" /> : <PanelLeftClose size={16} aria-hidden="true" />}</button>
