@@ -163,7 +163,9 @@ describe('Papertrail API', { skip }, () => {
     await call('PUT', `/images/${id}`, { token, raw: PNG, type: 'image/png' })
 
     assert.equal((await call('DELETE', '/auth/user', { token })).status, 400)
-    assert.equal((await call('DELETE', '/auth/user?confirmation=DELETE', { token })).status, 204)
+    assert.equal((await call('DELETE', '/auth/user?confirmation=DELETE', { token })).status, 403) // mot de passe absent
+    assert.equal((await call('DELETE', '/auth/user?confirmation=DELETE', { token, body: { password: 'mauvais-mot-de-passe' } })).status, 403)
+    assert.equal((await call('DELETE', '/auth/user?confirmation=DELETE', { token, body: { password: 'motdepasse1' } })).status, 204)
     assert.equal((await call('GET', '/auth/user', { token })).status, 401)
     for (const table of ['notes', 'note_images', 'sessions']) {
       const [[{ count }]] = await pool.query(`SELECT COUNT(*) AS count FROM ${table} WHERE user_id = ?`, [user.id])

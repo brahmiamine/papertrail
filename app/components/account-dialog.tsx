@@ -8,6 +8,7 @@ export function AccountDialog({ userId, email, lang, open, close, children }: { 
   const [password, setPassword] = useState('')
   const [confirmation, setConfirmation] = useState('')
   const [deletion, setDeletion] = useState('')
+  const [currentPassword, setCurrentPassword] = useState('')
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState('')
   const t = featureCopy[lang]
@@ -22,12 +23,12 @@ export function AccountDialog({ userId, email, lang, open, close, children }: { 
     if (!apiUrl || !userId) return
     setBusy(true); setMessage('')
     try {
-      await auth.deleteAccount()
+      await auth.deleteAccount(currentPassword)
       await deleteLocal('books', 'papertrail-notes:' + userId)
       localStorage.removeItem('papertrail-notes:' + userId)
       auth.forget()
       location.replace(basePath + '/notes/')
     } catch { setMessage(t.failure) } finally { setBusy(false) }
   }
-  return <dialog ref={dialog} className="insert-dialog" aria-labelledby="account-title" onCancel={close}><h2 id="account-title">{t.settings}</h2>{children}{email && <><p>{email}</p><form onSubmit={event => { event.preventDefault(); void changePassword() }}><label>{t.password}<input required type="password" autoComplete="new-password" minLength={8} value={password} onChange={event => setPassword(event.target.value)} /></label><label>{t.confirmPassword}<input required type="password" autoComplete="new-password" minLength={8} value={confirmation} onChange={event => setConfirmation(event.target.value)} /></label><button disabled={busy}>{t.savePassword}</button></form><details><summary>{t.deleteAccount}</summary><p>{t.deleteWarning}</p><label>{t.deleteConfirm}<input value={deletion} onChange={event => setDeletion(event.target.value)} autoComplete="off" /></label><button className="danger" disabled={busy || deletion !== (lang === 'fr' ? 'SUPPRIMER' : 'DELETE')} onClick={() => void deleteAccount()}>{t.deleteAccount}</button></details></>}{message && <p role="status">{message}</p>}<button autoFocus disabled={busy} onClick={close}>{lang === 'fr' ? 'Fermer' : lang === 'ar' ? 'إغلاق' : 'Close'}</button></dialog>
+  return <dialog ref={dialog} className="insert-dialog" aria-labelledby="account-title" onCancel={close}><h2 id="account-title">{t.settings}</h2>{children}{email && <><p>{email}</p><form onSubmit={event => { event.preventDefault(); void changePassword() }}><label>{t.password}<input required type="password" autoComplete="new-password" minLength={8} value={password} onChange={event => setPassword(event.target.value)} /></label><label>{t.confirmPassword}<input required type="password" autoComplete="new-password" minLength={8} value={confirmation} onChange={event => setConfirmation(event.target.value)} /></label><button disabled={busy}>{t.savePassword}</button></form><details><summary>{t.deleteAccount}</summary><p>{t.deleteWarning}</p><label>{t.deleteConfirm}<input value={deletion} onChange={event => setDeletion(event.target.value)} autoComplete="off" /></label><label>{t.currentPassword}<input required type="password" autoComplete="current-password" value={currentPassword} onChange={event => setCurrentPassword(event.target.value)} /></label><button className="danger" disabled={busy || !currentPassword || deletion !== (lang === 'fr' ? 'SUPPRIMER' : 'DELETE')} onClick={() => void deleteAccount()}>{t.deleteAccount}</button></details></>}{message && <p role="status">{message}</p>}<button autoFocus disabled={busy} onClick={close}>{lang === 'fr' ? 'Fermer' : lang === 'ar' ? 'إغلاق' : 'Close'}</button></dialog>
 }

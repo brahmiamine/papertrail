@@ -46,5 +46,5 @@ export const auth = {
   recover: (email: string) => api('POST', '/auth/recover', { email }),
   verify: async (type: 'magic' | 'recovery', token: string) => setSession(await api<Session>('POST', '/auth/verify', { type, token })),
   updatePassword: (password: string) => api('PUT', '/auth/password', { password }),
-  deleteAccount: () => api('DELETE', '/auth/user?confirmation=DELETE'),
+  deleteAccount: (password: string) => api('DELETE', '/auth/user?confirmation=DELETE', { password }),
 }
